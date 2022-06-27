@@ -21,26 +21,35 @@ else()
   endif()
 endif()
 
+#find_package(PIO REQUIRED COMPONENT C Fortran STATIC PATH ${PIO_ROOT})
+find_package(PIO REQUIRED COMPONENTS C Fortran)
+message(${PIO_FOUND} ${PIO_Fortran_STATIC_FOUND})
+#if (PIO_FOUND)
+#endif()
+#set_target_properties(
+
+#find_package(FMS REQUIRED COMPONENTS R4 R8)
+#add_library(fms ALIAS FMS::fms_r8)
+
 #------------------------------------------------------------------------------
 # NUOPC Driver
 add_executable(driver ${_driver_files})
 
 #------------------------------------------------------------------------------
 # Add external libraries
-link_directories(${CMAKE_BINARY_DIR}/../../CDEPS/build/datm)
-target_include_directories(driver PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/../../CDEPS/build/datm>
-                                         $<INSTALL_INTERFACE:mod>)
+foreach(DEPS datm streams dshr cdeps_share FoX_dom FoX_wxml FoX_sax FoX_common FoX_utils FoX_fsys)
+  add_library(${DEPS} STATIC IMPORTED)
+  set_target_properties(${DEPS} PROPERTIES
+    IMPORTED_LOCATION "${CMAKE_BINARY_DIR}/../../CDEPS/install/lib/lib${DEPS}.a"
+    INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_BINARY_DIR}/../../CDEPS/install/include")
+endforeach(DEPS)
 
-link_directories(${CMAKE_BINARY_DIR}/../../noahmp/build)
-target_include_directories(driver PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/../../noahmp/build/mod>
-                                         $<INSTALL_INTERFACE:mod>)
+add_library(noahmp STATIC IMPORTED)
+set_target_properties(noahmp PROPERTIES
+	IMPORTED_LOCATION "${CMAKE_BINARY_DIR}/../../noahmp/install/lib/libnoahmp.a"
+	INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_BINARY_DIR}/../../noahmp/install/mod")
 
-
-link_directories(/opt/view/lib)
-target_include_directories(driver PUBLIC $<BUILD_INTERFACE:/opt/view/include>
-                                         $<INSTALL_INTERFACE:mod>)
-
-target_link_libraries(driver PUBLIC esmf datm noupc netcdf netcdff pnetcdf xerces-c)
+target_link_libraries(driver PUBLIC esmf noahmp datm streams dshr cdeps_share FoX_dom FoX_wxml FoX_sax FoX_common FoX_utils FoX_fsys PIO::PIO_Fortran)
 
 #------------------------------------------------------------------------------
 # Install
