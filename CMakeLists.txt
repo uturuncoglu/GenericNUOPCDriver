@@ -21,15 +21,10 @@ else()
   endif()
 endif()
 
-#find_package(PIO REQUIRED COMPONENT C Fortran STATIC PATH ${PIO_ROOT})
 find_package(PIO REQUIRED COMPONENTS C Fortran)
-message(${PIO_FOUND} ${PIO_Fortran_STATIC_FOUND})
-#if (PIO_FOUND)
-#endif()
-#set_target_properties(
 
-#find_package(FMS REQUIRED COMPONENTS R4 R8)
-#add_library(fms ALIAS FMS::fms_r8)
+find_package(FMS REQUIRED COMPONENTS R4 R8)
+add_library(fms ALIAS FMS::fms_r8)
 
 #------------------------------------------------------------------------------
 # NUOPC Driver
@@ -49,7 +44,7 @@ set_target_properties(noahmp PROPERTIES
 	IMPORTED_LOCATION "${CMAKE_BINARY_DIR}/../../noahmp/install/lib/libnoahmp.a"
 	INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_BINARY_DIR}/../../noahmp/install/mod")
 
-target_link_libraries(driver PUBLIC esmf noahmp datm streams dshr cdeps_share FoX_dom FoX_wxml FoX_sax FoX_common FoX_utils FoX_fsys PIO::PIO_Fortran)
+target_link_libraries(driver PUBLIC esmf PIO::PIO_Fortran noahmp datm streams dshr cdeps_share FoX_dom FoX_wxml FoX_sax FoX_common FoX_utils FoX_fsys fms)
 
 #------------------------------------------------------------------------------
 # Install
@@ -58,8 +53,6 @@ install(
   EXPORT  driver-config
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib)
-
-install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/mod DESTINATION ${CMAKE_INSTALL_PREFIX})
 
 install(EXPORT      driver-config
         DESTINATION lib/cmake)
