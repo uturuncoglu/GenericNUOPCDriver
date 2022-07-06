@@ -2,7 +2,13 @@ components:
   lnd:
     name: noahmp
     module: lnd_comp_nuopc
+    library_dir: /test/noahmp/install/lib
+    include_dir: /test/noahmp/install/mod
+    libs: [noahmp]
     
   atm:
     name: cdeps
     module: cdeps_datm_comp
+    library_dir: /test/CDEPS/install/lib
+    include_dir: /test/CDEPS/install/include
+    libs: [datm, streams, dshr, cdeps_share, FoX_dom, FoX_wxml, FoX_sax, FoX_common, FoX_utils, FoX_fsys]

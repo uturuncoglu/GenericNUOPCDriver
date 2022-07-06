@@ -10,7 +10,7 @@ list(APPEND _driver_files esmApp.F90 esm.F90)
 set_source_files_properties(esm.F90 PROPERTIES Fortran_PREPROCESS ON)
 
 #------------------------------------------------------------------------------
-# Find dependencies
+# Find core dependencies
 if (TARGET esmf)
   message("Target esmf is already found. Skip find_package ...")
 else()
@@ -23,43 +23,44 @@ else()
   endif()
 endif()
 
-find_package(PIO REQUIRED COMPONENTS C Fortran)
+find_package( PythonInterp 2.7 REQUIRED )
 
+#------------------------------------------------------------------------------
+# Find configuration specific dependencies
+# TODO: This needs to be dynamic
+find_package(PIO REQUIRED COMPONENTS C Fortran)
 find_package(FMS REQUIRED COMPONENTS R4 R8)
 add_library(fms ALIAS FMS::fms_r8)
-
-find_package( PythonInterp 2.7 REQUIRED )
 
 #------------------------------------------------------------------------------
 # NUOPC Driver
 add_executable(driver ${_driver_files})
 
 #------------------------------------------------------------------------------
-# Add external libraries
-foreach(DEPS datm streams dshr cdeps_share FoX_dom FoX_wxml FoX_sax FoX_common FoX_utils FoX_fsys)
-  add_library(${DEPS} STATIC IMPORTED)
-  set_target_properties(${DEPS} PROPERTIES
-    IMPORTED_LOCATION "${CMAKE_BINARY_DIR}/../../CDEPS/install/lib/lib${DEPS}.a"
-    INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_BINARY_DIR}/../../CDEPS/install/include")
-endforeach(DEPS)
-
-add_library(noahmp STATIC IMPORTED)
-set_target_properties(noahmp PROPERTIES
-	IMPORTED_LOCATION "${CMAKE_BINARY_DIR}/../../noahmp/install/lib/libnoahmp.a"
-	INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_BINARY_DIR}/../../noahmp/install/mod")
-
-target_link_libraries(driver PUBLIC esmf PIO::PIO_Fortran noahmp datm streams dshr cdeps_share FoX_dom FoX_wxml FoX_sax FoX_common FoX_utils FoX_fsys fms)
+# Generate include files for CMake and driver code
+execute_process(
+  COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/scripts/gen_code.py --ifile=${CMAKE_CURRENT_SOURCE_DIR}/nuopc_drv.yaml --odir=${CMAKE_CURRENT_SOURCE_DIR})  
 
 #------------------------------------------------------------------------------
-# Generate include files
-add_custom_target(
- run ALL
- COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/scripts/gen_code.py --ifile=${CMAKE_CURRENT_SOURCE_DIR}/nuopc_drv.yaml --odir=${CMAKE_CURRENT_SOURCE_DIR}
- BYPRODUCTS comps.inc macros.inc
- COMMENT "Generating configuration specific include files"
-)
+# Add external libraries
+# NOTE: extlib.txt is auto-generated from the YAML file
+include(extlib.txt)
+foreach(_COMP ${COMPS})
+  message("Adding dependencies for component ${_COMP} ...")
+  message("Library directory for ${_COMP} is ${${_COMP}_LIB_DIR}")
+  message("Include directory for ${_COMP} is ${${_COMP}_INC_DIR}")
+  foreach(_DEPS ${${_COMP}_LIBS})
+    message("Adding library ${_DEPS}")
+    add_library(${_DEPS} STATIC IMPORTED)
+    set_target_properties(${_DEPS} PROPERTIES
+      IMPORTED_LOCATION "${${_COMP}_LIB_DIR}/lib${_DEPS}.a"
+      INTERFACE_INCLUDE_DIRECTORIES "${${_COMP}_INC_DIR}")
+    target_link_libraries(driver PUBLIC ${_DEPS}) 
+  endforeach(_DEPS)
+endforeach(_COMP)
 
-add_dependencies(driver run)
+# TODO: This needs to be dynamic
+target_link_libraries(driver PUBLIC esmf PIO::PIO_Fortran fms)
 
 #------------------------------------------------------------------------------
 # Install
