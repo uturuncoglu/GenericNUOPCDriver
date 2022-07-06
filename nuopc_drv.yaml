@@ -1,0 +1,8 @@
+components:
+  lnd:
+    name: noahmp
+    module: lnd_comp_nuopc
+    
+  atm:
+    name: cdeps
+    module: cdeps_datm_comp

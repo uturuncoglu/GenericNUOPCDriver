@@ -7,7 +7,7 @@
 ! NASA Goddard Space Flight Center.
 ! Licensed under the University of Illinois-NCSA License.
 !==============================================================================
-
+#include "macros.inc"
 module ESM
 
   !-----------------------------------------------------------------------------
@@ -21,9 +21,7 @@ module ESM
     Driver_label_SetRunSequence   => label_SetRunSequence
   use NUOPC_Connector, only: cplSS => SetServices
 
-  ! TODO: this part of code needs to be generated
-  use cdeps_datm_comp, only: atmSS => SetServices
-  use lnd_comp_nuopc , only: lndSS => SetServices
+  include 'comps.inc'
 
   implicit none
 
@@ -31,6 +29,7 @@ module ESM
 
   public SetServices
 
+  ! type for storing component specific SetServices methods
   type ssPtr
      procedure(SetServices), pointer, nopass :: s_ptr => null()
   end type ssPtr
@@ -111,6 +110,7 @@ module ESM
     type(ESMF_Field)              :: field
     type(ESMF_Time)               :: startTime
     type(ESMF_Time)               :: refTime
+    type(ESMF_Time)               :: currTime
     type(ESMF_Time)               :: stopTime
     type(ESMF_TimeInterval)       :: timeStep
     type(ESMF_Clock)              :: clock
@@ -118,6 +118,7 @@ module ESM
     type(ESMF_CplComp)            :: connector
     type(ESMF_Config)             :: config 
     type(NUOPC_FreeFormat)        :: ff
+    type(ESMF_Alarm)        :: alarm_stop          ! alarm
 
     integer :: n, m
     integer :: compCount
@@ -125,6 +126,8 @@ module ESM
     integer :: start_tod           ! Start time of day (seconds)
     integer :: ref_ymd             ! Reference date (YYYYMMDD)
     integer :: ref_tod             ! Reference time of day (seconds)
+    integer                 :: curr_ymd            ! Current ymd (YYYYMMDD)
+    integer                 :: curr_tod            ! Current tod (seconds)    
     integer :: stop_n              ! Number until stop
     integer :: stop_ymd            ! Stop date (YYYYMMDD)
     integer :: stop_tod            ! Stop time-of-day
@@ -156,13 +159,15 @@ module ESM
     ! Obtain component labels
     if (.not. allocated(compLabels)) allocate(compLabels(compCount))
     call ESMF_ConfigGetAttribute(config, valueList=compLabels, label="component_list:", count=compCount, rc=rc)
-    if (chkerr(rc,__LINE__,u_FILE_u)) return 
+    if (chkerr(rc,__LINE__,u_FILE_u)) return
 
-    ! Set procedure pointer
-    ! TODO: this part of code needs to be generated somehow
+    ! Sort component list, order of list needs to match with auto-generated code (include files)
+    call ESMF_UtilSort(compLabels, ESMF_SORTFLAG_ASCENDING, rc=rc)
+    if (chkerr(rc,__LINE__,u_FILE_u)) return
+
+    ! Set SetServices call pointer, setSS is a macro defined in auto-generated macros.inc
     if (.not. allocated(compSS)) allocate(compSS(compCount))
-    compSS(1)%s_ptr => atmSS
-    compSS(2)%s_ptr => lndSS
+    setSS()
 
     ! Loop over components and add them as component 
     do n = 1, compCount
@@ -225,6 +230,14 @@ module ESM
     call ESMF_TimeSet(startTime, yy=yr, mm=mon, dd=day, s=start_tod, rc=rc)
     if (ChkErr(rc,__LINE__,u_FILE_u)) return
 
+    ! Set driver current time
+    ! TODO: need to be modified for the restart cases
+    curr_ymd = start_ymd
+    curr_tod = start_tod
+    call esm_time_date2ymd(curr_ymd, yr, mon, day)
+    call ESMF_TimeSet(currTime, yy=yr, mm=mon, dd=day, s=curr_tod, rc=rc)
+    if (ChkErr(rc,__LINE__,u_FILE_u)) return    
+
     ! Set driver clock reference time - HARD-CODED TO START TIME
     ref_ymd = start_ymd
     ref_tod = start_tod
@@ -242,41 +255,41 @@ module ESM
     if (ChkErr(rc,__LINE__,u_FILE_u)) return
 
     ! Set driver clock stop time
-    !call NUOPC_CompAttributeGet(driver, name="stop_option", value=stop_option, rc=rc)
-    !if (ChkErr(rc,__LINE__,u_FILE_u)) return
+    call NUOPC_CompAttributeGet(driver, name="stop_option", value=stop_option, rc=rc)
+    if (ChkErr(rc,__LINE__,u_FILE_u)) return
 
-    !call NUOPC_CompAttributeGet(driver, name="stop_n", value=cvalue, rc=rc)
-    !if (ChkErr(rc,__LINE__,u_FILE_u)) return
-    !read(cvalue,*) stop_n
+    call NUOPC_CompAttributeGet(driver, name="stop_n", value=cvalue, rc=rc)
+    if (ChkErr(rc,__LINE__,u_FILE_u)) return
+    read(cvalue,*) stop_n
 
-    !call NUOPC_CompAttributeGet(driver, name="stop_ymd", value=cvalue, rc=rc)
-    !if (ChkErr(rc,__LINE__,u_FILE_u)) return
-    !read(cvalue,*) stop_ymd
+    call NUOPC_CompAttributeGet(driver, name="stop_ymd", value=cvalue, rc=rc)
+    if (ChkErr(rc,__LINE__,u_FILE_u)) return
+    read(cvalue,*) stop_ymd
 
-    !call NUOPC_CompAttributeGet(driver, name="stop_tod", value=cvalue, rc=rc)
-    !if (ChkErr(rc,__LINE__,u_FILE_u)) return
-    !read(cvalue,*) stop_tod
+    call NUOPC_CompAttributeGet(driver, name="stop_tod", value=cvalue, rc=rc)
+    if (ChkErr(rc,__LINE__,u_FILE_u)) return
+    read(cvalue,*) stop_tod
 
-    !if (stop_ymd < 0) then
-    !   stop_ymd = 99990101
-    !   stop_tod = 0
-    !endif
+    if (stop_ymd < 0) then
+       stop_ymd = 99990101
+       stop_tod = 0
+    endif
 
-    !call esm_time_alarmInit(clock, &
-    !     alarm   = alarm_stop,           &
-    !     option  = stop_option,          &
-    !     opt_n   = stop_n,               &
-    !     opt_ymd = stop_ymd,             &
-    !     opt_tod = stop_tod,             &
-    !     RefTime = CurrTime,             &
-    !     alarmname = 'alarm_stop', rc=rc)
-    !if (ChkErr(rc,__LINE__,u_FILE_u)) return
+    call esm_time_alarmInit(clock, &
+         alarm   = alarm_stop,           &
+         option  = stop_option,          &
+         opt_n   = stop_n,               &
+         opt_ymd = stop_ymd,             &
+         opt_tod = stop_tod,             &
+         refTime = CurrTime,             &
+         alarmname = 'alarm_stop', rc=rc)
+    if (ChkErr(rc,__LINE__,u_FILE_u)) return
 
-    !call ESMF_AlarmGet(alarm_stop, RingTime=StopTime, rc=rc )
-    !if (ChkErr(rc,__LINE__,u_FILE_u)) return
+    call ESMF_AlarmGet(alarm_stop, RingTime=StopTime, rc=rc )
+    if (ChkErr(rc,__LINE__,u_FILE_u)) return
 
-    !call ESMF_ClockSet(clock, StopTime=StopTime, rc=rc)
-    !if (ChkErr(rc,__LINE__,u_FILE_u)) return
+    call ESMF_ClockSet(clock, StopTime=StopTime, rc=rc)
+    if (ChkErr(rc,__LINE__,u_FILE_u)) return
 
     call ESMF_GridCompSet(driver, clock=clock, rc=rc)
     if (ChkErr(rc,__LINE__,u_FILE_u)) return

@@ -7,6 +7,8 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
 # Add source files
 list(APPEND _driver_files esmApp.F90 esm.F90) 
 
+set_source_files_properties(esm.F90 PROPERTIES Fortran_PREPROCESS ON)
+
 #------------------------------------------------------------------------------
 # Find dependencies
 if (TARGET esmf)
@@ -25,6 +27,8 @@ find_package(PIO REQUIRED COMPONENTS C Fortran)
 
 find_package(FMS REQUIRED COMPONENTS R4 R8)
 add_library(fms ALIAS FMS::fms_r8)
+
+find_package( PythonInterp 2.7 REQUIRED )
 
 #------------------------------------------------------------------------------
 # NUOPC Driver
@@ -45,6 +49,17 @@ set_target_properties(noahmp PROPERTIES
 	INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_BINARY_DIR}/../../noahmp/install/mod")
 
 target_link_libraries(driver PUBLIC esmf PIO::PIO_Fortran noahmp datm streams dshr cdeps_share FoX_dom FoX_wxml FoX_sax FoX_common FoX_utils FoX_fsys fms)
+
+#------------------------------------------------------------------------------
+# Generate include files
+add_custom_target(
+ run ALL
+ COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/scripts/gen_code.py --ifile=${CMAKE_CURRENT_SOURCE_DIR}/nuopc_drv.yaml --odir=${CMAKE_CURRENT_SOURCE_DIR}
+ BYPRODUCTS comps.inc macros.inc
+ COMMENT "Generating configuration specific include files"
+)
+
+add_dependencies(driver run)
 
 #------------------------------------------------------------------------------
 # Install
