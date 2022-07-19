@@ -39,7 +39,11 @@ add_executable(driver ${_driver_files})
 #------------------------------------------------------------------------------
 # Generate include files for CMake and driver code
 execute_process(
-  COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/scripts/gen_code.py --ifile=${CMAKE_CURRENT_SOURCE_DIR}/nuopc_drv.yaml --odir=${CMAKE_CURRENT_SOURCE_DIR})  
+  COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/scripts/gen_code.py 
+    --ifile=${CMAKE_CURRENT_SOURCE_DIR}/nuopc_drv.yaml 
+    --odir=${CMAKE_CURRENT_SOURCE_DIR}
+    --libdir=$ENV{COMPS_LIB_DIR}
+    --incdir=$ENV{COMPS_INC_DIR})  
 
 #------------------------------------------------------------------------------
 # Add external libraries
