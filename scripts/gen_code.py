@@ -42,7 +42,7 @@ def create_inc_macro(_dict, odir):
         # add macro line
         f.write('#define setSS() {}'.format('; '.join(_str)))
 
-def create_inc_cmake(_dict, odir, lib_dir, inc_dir):
+def create_inc_cmake(_dict, odir):
     # open file
     with open(os.path.join(odir, 'extlib.txt'), 'w') as f:
         # loop through components and create use statements
@@ -50,39 +50,28 @@ def create_inc_cmake(_dict, odir, lib_dir, inc_dir):
         comp_str = [comp.upper() for comp in od.keys()]
         f.write('set(COMPS {})\n'.format(' '.join(comp_str)))
         for k1, v1 in od.items():
-            ldir = lib_dir
-            if lib_dir is 'unset':
-                ldir = v1['library_dir']
-            idir = inc_dir
-            if inc_dir is 'unset':
-                idir = v1['include_dir']
-            f.write('set({}_LIB_DIR {})\n'.format(k1.upper(), ldir))
-            f.write('set({}_INC_DIR {})\n'.format(k1.upper(), idir))
+            # check environment variables first, {COMP}_LIB_DIR and {COMP}_INC_DIR
+            lib_dir = os.environ.get('{}_LIB_DIR'.format(k1.upper()), v1['library_dir'])
+            inc_dir = os.environ.get('{}_INC_DIR'.format(k1.upper()), v1['include_dir'])
+            f.write('set({}_LIB_DIR {})\n'.format(k1.upper(), lib_dir))
+            f.write('set({}_INC_DIR {})\n'.format(k1.upper(), inc_dir))
             f.write('set({}_LIBS {})\n'.format(k1.upper(), ' '.join(v1['libs'])))
 
 def main(argv):
     # default values
     ifile = 'nuopc_drv.yaml'
     odir = '.'
-    lib_dir = 'unset'
-    inc_dir = 'unset'
 
     # read input arguments
     parser = argparse.ArgumentParser()
     parser.add_argument('--ifile' , help='Input driver yaml file', required=True)
     parser.add_argument('--odir'  , help='Output directory for generated code')
-    parser.add_argument('--libdir', help='Library directory for components')
-    parser.add_argument('--incdir', help='Include directory for components')
     args = parser.parse_args()
 
     if args.ifile:
         ifile = args.ifile
     if args.odir:
         odir = args.odir
-    if args.libdir:
-        lib_dir = args.libdir
-    if args.incdir:
-        inc_dir = args.incdir
 
     # read driver configuration yaml file
     dict_drv = read_drv_yaml_file(ifile)
@@ -94,7 +83,7 @@ def main(argv):
     create_inc_macro(dict_drv, odir)
 
     # create extlib.txt for CMake
-    create_inc_cmake(dict_drv, odir, lib_dir, inc_dir)
+    create_inc_cmake(dict_drv, odir)
 
 if __name__== "__main__":
 	main(sys.argv[1:])
