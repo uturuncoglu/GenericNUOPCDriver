@@ -126,8 +126,8 @@ module ESM
     integer :: start_tod           ! Start time of day (seconds)
     integer :: ref_ymd             ! Reference date (YYYYMMDD)
     integer :: ref_tod             ! Reference time of day (seconds)
-    integer                 :: curr_ymd            ! Current ymd (YYYYMMDD)
-    integer                 :: curr_tod            ! Current tod (seconds)    
+    integer :: curr_ymd            ! Current ymd (YYYYMMDD)
+    integer :: curr_tod            ! Current tod (seconds)
     integer :: stop_n              ! Number until stop
     integer :: stop_ymd            ! Stop date (YYYYMMDD)
     integer :: stop_tod            ! Stop time-of-day
