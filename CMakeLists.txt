@@ -32,6 +32,7 @@ find_package( PythonInterp 2.7 REQUIRED )
 #------------------------------------------------------------------------------
 # Find configuration specific dependencies
 # TODO: This needs to be dynamic
+find_package(MPI REQUIRED)
 if(OPENMP)
   find_package(OpenMP REQUIRED)
 endif()
