@@ -23,7 +23,7 @@ def read_drv_yaml_file(file_path):
         data = yaml.load(_file, Loader=Loader)
         return dict({k.lower().replace("-", "_"): v for k, v in data.items()})
 
-def recv_files(_dict):
+def recv_files(_dict, fhash):
     # loop through available components
     od = collections.OrderedDict(sorted(_dict['components'].items()))
     for k1, v1 in od.items():
@@ -35,48 +35,66 @@ def recv_files(_dict):
         # call data retrieval routine for component
         if protocol == 'ftp':
             print('downloading files using {} protocol ...'.format(protocol))
-            ftp_get(end_point, files)
+            ftp_get(end_point, files, fhash)
         elif protocol == 's3':
             print('downloading files using {} protocol ...'.format(protocol))
-            s3_get(end_point, files)
+            s3_get(end_point, files, fhash)
         else:
             sys.exit("unsupported protocol to download data: {}".format(protocol))
 
-def ftp_get(end_point, files, wget=False):
-    if wget:
-        # get files
-        for f in files:        
+def ftp_get(end_point, files, fhash, wget=False):
+    # loop over files
+    for f in files:
+        lfile = os.path.basename(f)
+
+        if wget:
+            # download file
             cmd = 'wget -c {}:{}'.format(end_point, f)
             print("cmd is {}\n".format(cmd))
             os.system(cmd)
-    else:    
-        # open connection to server
-        ftp = ftplib.FTP(end_point)
-        ftp.login()
+        else:    
+            # open connection to server
+            ftp = ftplib.FTP(end_point)
+            ftp.login()
 
-        # get files
-        for f in files:
-            ofile = os.path.basename(f)
-            with open(ofile, "wb") as fout:
-                print('downloading {}'.format(ofile)) 
-                ftp.retrbinary(f"RETR {f}", fout.write)
+            # download file
+            with open(lfile, "wb") as fout:
+                if os.path.exists(lfile):
+                    print('file \'{}\' is found. skip downloading'.format(lfile))
+                else:
+                    print('downloading {}'.format(lfile)) 
+                    ftp.retrbinary(f"RETR {f}", fout.write)
 
-        # close connection
-        ftp.quit()
+            # close connection
+            ftp.quit()
 
-def s3_get(end_point, files, cli=False):
+        # get hash of file
+        md5sum_local = hashlib.md5(open(lfile,'rb').read()).hexdigest()
+
+        # write file name and checksum to file
+        fhash.write('{}: {}\n'.format(lfile, md5sum_local))
+
+def s3_get(end_point, files, fhash, cli=False):
     # cli uses AWS command line interface
     if cli:
-        # get files
+        # loop over files
         for f in files:
+            # download file
             cmd = 'aws s3 cp --no-sign-request s3://{}/{} .'.format(end_point, f)
             print("cmd is '{}'\n".format(cmd))
             os.system(cmd)
+
+            # get hash of file
+            lfile = os.path.basename(f)
+            md5sum_local = hashlib.md5(open(lfile,'rb').read()).hexdigest()
+
+            # write file name and checksum to file
+            fhash.write('{}: {}\n'.format(lfile, md5sum_local))
     else:
         # create an S3 access object, config option allows accessing anonymously
         s3 = boto3.client("s3", config=Config(signature_version=UNSIGNED))
 
-        # get files
+        # loop over files
         for f in files:
             lfile = os.path.basename(f)
 
@@ -108,6 +126,9 @@ def s3_get(end_point, files, cli=False):
             else:
                 print('file \'{}\' is found. skip downloading'.format(lfile))
 
+            # write file name and checksum to file
+            fhash.write('{}: {}\n'.format(lfile, md5sum_remote))
+
 def main(argv):
     # default values
     ifile = 'nuopc_drv.yaml'
@@ -123,8 +144,14 @@ def main(argv):
     # read driver configuration yaml file
     dict_drv = read_drv_yaml_file(ifile)
 
+    # open file object to store list of files and their hashes
+    fhash = open('file_checksum.lock', 'w')
+
     # get files
-    recv_files(dict_drv)
+    recv_files(dict_drv, fhash)
+
+    # close file
+    fhash.close()
 
 if __name__== "__main__":
 	main(sys.argv[1:])
