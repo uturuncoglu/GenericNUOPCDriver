@@ -78,10 +78,10 @@ def cmd_get(end_point, files, fhash, force_download):
 
         # download file
         if force_download:
-            cmd = 'wget {}:{}'.format(end_point, f)
+            cmd = 'wget --no-verbose {}:{}'.format(end_point, f)
         else:
-            cmd = 'wget -c {}:{}'.format(end_point, f)
-        print("cmd is {}\n".format(cmd))
+            cmd = 'wget --no-verbose -c {}:{}'.format(end_point, f)
+        print("cmd is {}".format(cmd))
         os.system(cmd)
 
         # get hash of file
@@ -103,7 +103,7 @@ def s3_cli_get(end_point, files, fhash, force_download):
 
         if download:
             cmd = 'aws s3 cp --no-sign-request s3://{}/{} .'.format(end_point, f)
-            print("cmd is '{}'\n".format(cmd))
+            print("cmd is '{}'".format(cmd))
             os.system(cmd)
 
         # get hash of file
