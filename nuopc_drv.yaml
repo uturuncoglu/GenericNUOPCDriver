@@ -66,7 +66,7 @@ components:
     include_dir: /test/cdeps/install/include
     libs: [datm, streams, dshr, cdeps_share, FoX_dom, FoX_wxml, FoX_sax, FoX_common, FoX_utils, FoX_fsys]
     input:
-      protocol: ftp
+      protocol: wget
       end_point: ftp.cgd.ucar.edu
       files:
         - /cesm/inputdata/atm/datm7/atm_forcing.datm7.GSWP3.0.5d.v1.c170516/Precip/clmforc.GSWP3.c2011.0.5x0.5.Prec.1999-12.nc

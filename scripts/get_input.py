@@ -23,7 +23,7 @@ def read_drv_yaml_file(file_path):
         data = yaml.load(_file, Loader=Loader)
         return dict({k.lower().replace("-", "_"): v for k, v in data.items()})
 
-def recv_files(_dict, fhash):
+def recv_files(_dict, fhash, force_download):
     # loop through available components
     od = collections.OrderedDict(sorted(_dict['components'].items()))
     for k1, v1 in od.items():
@@ -33,40 +33,37 @@ def recv_files(_dict, fhash):
         files = v1['input']['files']
 
         # call data retrieval routine for component
+        print('downloading files using {} protocol ...'.format(protocol))
         if protocol == 'ftp':
-            print('downloading files using {} protocol ...'.format(protocol))
-            ftp_get(end_point, files, fhash)
+            ftp_get(end_point, files, fhash, force_download)
+        if protocol == 'wget':
+            cmd_get(end_point, files, fhash, force_download)
         elif protocol == 's3':
-            print('downloading files using {} protocol ...'.format(protocol))
-            s3_get(end_point, files, fhash)
+            s3_get(end_point, files, fhash, force_download)
+        elif protocol == 's3-cli':
+            s3_cli_get(end_point, files, fhash, force_download)
         else:
             sys.exit("unsupported protocol to download data: {}".format(protocol))
 
-def ftp_get(end_point, files, fhash, wget=False):
+def ftp_get(end_point, files, fhash, force_download):
     # loop over files
     for f in files:
         lfile = os.path.basename(f)
 
-        if wget:
-            # download file
-            cmd = 'wget -c {}:{}'.format(end_point, f)
-            print("cmd is {}\n".format(cmd))
-            os.system(cmd)
-        else:    
-            # open connection to server
-            ftp = ftplib.FTP(end_point)
-            ftp.login()
+        # open connection to server
+        ftp = ftplib.FTP(end_point)
+        ftp.login()
 
-            # download file
-            with open(lfile, "wb") as fout:
-                if os.path.exists(lfile):
-                    print('file \'{}\' is found. skip downloading'.format(lfile))
-                else:
-                    print('downloading {}'.format(lfile)) 
-                    ftp.retrbinary(f"RETR {f}", fout.write)
+        # download file
+        with open(lfile, "wb") as fout:
+            if os.path.exists(lfile) and not force_download:
+                print('file \'{}\' is found. skip downloading'.format(lfile))
+            else:
+                print('downloading {}'.format(lfile)) 
+                ftp.retrbinary(f"RETR {f}", fout.write)
 
-            # close connection
-            ftp.quit()
+        # close connection
+        ftp.quit()
 
         # get hash of file
         md5sum_local = hashlib.md5(open(lfile,'rb').read()).hexdigest()
@@ -74,72 +71,103 @@ def ftp_get(end_point, files, fhash, wget=False):
         # write file name and checksum to file
         fhash.write('{}: {}\n'.format(lfile, md5sum_local))
 
-def s3_get(end_point, files, fhash, cli=False):
-    # cli uses AWS command line interface
-    if cli:
-        # loop over files
-        for f in files:
-            # download file
+def cmd_get(end_point, files, fhash, force_download):
+    # loop over files
+    for f in files:
+        lfile = os.path.basename(f)
+
+        # download file
+        if force_download:
+            cmd = 'wget {}:{}'.format(end_point, f)
+        else:
+            cmd = 'wget -c {}:{}'.format(end_point, f)
+        print("cmd is {}\n".format(cmd))
+        os.system(cmd)
+
+        # get hash of file
+        md5sum_local = hashlib.md5(open(lfile,'rb').read()).hexdigest()
+
+        # write file name and checksum to file
+        fhash.write('{}: {}\n'.format(lfile, md5sum_local))
+
+def s3_cli_get(end_point, files, fhash, force_download):
+    # loop over files
+    for f in files:
+        lfile = os.path.basename(f)
+
+        # download file
+        download = True
+        if os.path.exists(lfile) and not force_download:
+            print('file \'{}\' is found. skip downloading'.format(lfile))
+            download = False 
+
+        if download:
             cmd = 'aws s3 cp --no-sign-request s3://{}/{} .'.format(end_point, f)
             print("cmd is '{}'\n".format(cmd))
             os.system(cmd)
 
-            # get hash of file
-            lfile = os.path.basename(f)
+        # get hash of file
+        md5sum_local = hashlib.md5(open(lfile,'rb').read()).hexdigest()
+
+        # write file name and checksum to file
+        fhash.write('{}: {}\n'.format(lfile, md5sum_local))    
+
+def s3_get(end_point, files, fhash, force_download):
+    # create an S3 access object, config option allows accessing anonymously
+    s3 = boto3.client("s3", config=Config(signature_version=UNSIGNED))
+
+    # loop over files
+    for f in files:
+        lfile = os.path.basename(f)
+
+        # try to get checksum from s3 bucket
+        try:
+            md5sum_remote = s3.head_object(Bucket=end_point, Key=f)['ETag'][1:-1]
+        except botocore.exceptions.ClientError:
+            md5sum_remote = None
+
+        # try to get checksum from local file, if exists
+        found = False
+        if os.path.exists(lfile):
+            found = True
             md5sum_local = hashlib.md5(open(lfile,'rb').read()).hexdigest()
+        else:
+            md5sum_local = None
 
-            # write file name and checksum to file
-            fhash.write('{}: {}\n'.format(lfile, md5sum_local))
-    else:
-        # create an S3 access object, config option allows accessing anonymously
-        s3 = boto3.client("s3", config=Config(signature_version=UNSIGNED))
+        # download file if local file not found or checksums not matched
+        download = False
+        if not found:
+            print('file not found \'{}\''.format(lfile))
+            download = True
+        if md5sum_remote != md5sum_local:
+            print('file \'{}\' is found but checksums are not matched!\ns3   :{}\nlocal:{}'.format(lfile, md5sum_remote, md5sum_local))
+            download = True
+        if force_download:
+            download = True
+        if download:    
+            print('downloading \'{}\''.format(lfile)) 
+            s3.download_file(Bucket=end_point, Key=f, Filename=lfile)
+        else:
+            print('file \'{}\' is found. skip downloading'.format(lfile))
 
-        # loop over files
-        for f in files:
-            lfile = os.path.basename(f)
-
-            # try to get checksum from s3 bucket
-            try:
-                md5sum_remote = s3.head_object(Bucket=end_point, Key=f)['ETag'][1:-1]
-            except botocore.exceptions.ClientError:
-                md5sum_remote = None
-
-            # try to get checksum from local file, if exists
-            found = False
-            if os.path.exists(lfile):
-                found = True
-                md5sum_local = hashlib.md5(open(lfile,'rb').read()).hexdigest()
-            else:
-                md5sum_local = None
-
-            # download file if local file not found or checksums not matched
-            download = False
-            if not found:
-                print('file not found \'{}\''.format(lfile))
-                download = True
-            if md5sum_remote != md5sum_local:
-                print('file \'{}\' is found but checksums are not matched!\ns3   :{}\nlocal:{}'.format(lfile, md5sum_remote, md5sum_local))
-                download = True
-            if download:    
-                print('downloading \'{}\''.format(lfile)) 
-                s3.download_file(Bucket=end_point, Key=f, Filename=lfile)
-            else:
-                print('file \'{}\' is found. skip downloading'.format(lfile))
-
-            # write file name and checksum to file
-            fhash.write('{}: {}\n'.format(lfile, md5sum_remote))
+        # write file name and checksum to file
+        fhash.write('{}: {}\n'.format(lfile, md5sum_remote))
 
 def main(argv):
     # default values
     ifile = 'nuopc_drv.yaml'
+    force_download = False
 
     # read input arguments
     parser = argparse.ArgumentParser()
     parser.add_argument('--ifile' , help='Input driver yaml file', required=True)
+    parser.add_argument('--force-download', help='Force to skip file checking', action='store_true')
     args = parser.parse_args()
 
     if args.ifile:
         ifile = args.ifile
+    if args.force_download:
+        force_download = args.force_download
 
     # read driver configuration yaml file
     dict_drv = read_drv_yaml_file(ifile)
@@ -148,7 +176,7 @@ def main(argv):
     fhash = open('file_checksum.lock', 'w')
 
     # get files
-    recv_files(dict_drv, fhash)
+    recv_files(dict_drv, fhash, force_download)
 
     # close file
     fhash.close()
