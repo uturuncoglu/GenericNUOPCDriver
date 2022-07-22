@@ -5,6 +5,59 @@ components:
     library_dir: /test/noahmp/install/lib
     include_dir: /test/noahmp/install/mod
     libs: [noahmp]
+    input:
+      type: s3
+      end_point: noaa-ufs-regtests-pds
+      files:
+        - input-data-20220414/FV3_fix_tiled/C96/C96.maximum_snow_albedo.tile1.nc
+        - input-data-20220414/FV3_fix_tiled/C96/C96.maximum_snow_albedo.tile2.nc
+        - input-data-20220414/FV3_fix_tiled/C96/C96.maximum_snow_albedo.tile3.nc
+        - input-data-20220414/FV3_fix_tiled/C96/C96.maximum_snow_albedo.tile4.nc
+        - input-data-20220414/FV3_fix_tiled/C96/C96.maximum_snow_albedo.tile5.nc
+        - input-data-20220414/FV3_fix_tiled/C96/C96.maximum_snow_albedo.tile6.nc
+        - input-data-20220414/FV3_fix_tiled/C96/C96.slope_type.tile1.nc
+        - input-data-20220414/FV3_fix_tiled/C96/C96.slope_type.tile2.nc
+        - input-data-20220414/FV3_fix_tiled/C96/C96.slope_type.tile3.nc
+        - input-data-20220414/FV3_fix_tiled/C96/C96.slope_type.tile4.nc
+        - input-data-20220414/FV3_fix_tiled/C96/C96.slope_type.tile5.nc
+        - input-data-20220414/FV3_fix_tiled/C96/C96.slope_type.tile6.nc
+        - input-data-20220414/FV3_fix_tiled/C96/C96.soil_type.tile1.nc
+        - input-data-20220414/FV3_fix_tiled/C96/C96.soil_type.tile2.nc
+        - input-data-20220414/FV3_fix_tiled/C96/C96.soil_type.tile3.nc
+        - input-data-20220414/FV3_fix_tiled/C96/C96.soil_type.tile4.nc
+        - input-data-20220414/FV3_fix_tiled/C96/C96.soil_type.tile5.nc
+        - input-data-20220414/FV3_fix_tiled/C96/C96.soil_type.tile6.nc
+        - input-data-20220414/FV3_fix_tiled/C96/C96.substrate_temperature.tile1.nc
+        - input-data-20220414/FV3_fix_tiled/C96/C96.substrate_temperature.tile2.nc
+        - input-data-20220414/FV3_fix_tiled/C96/C96.substrate_temperature.tile3.nc
+        - input-data-20220414/FV3_fix_tiled/C96/C96.substrate_temperature.tile4.nc
+        - input-data-20220414/FV3_fix_tiled/C96/C96.substrate_temperature.tile5.nc
+        - input-data-20220414/FV3_fix_tiled/C96/C96.substrate_temperature.tile6.nc
+        - input-data-20220414/FV3_fix_tiled/C96/C96.vegetation_greenness.tile1.nc
+        - input-data-20220414/FV3_fix_tiled/C96/C96.vegetation_greenness.tile2.nc
+        - input-data-20220414/FV3_fix_tiled/C96/C96.vegetation_greenness.tile3.nc
+        - input-data-20220414/FV3_fix_tiled/C96/C96.vegetation_greenness.tile4.nc
+        - input-data-20220414/FV3_fix_tiled/C96/C96.vegetation_greenness.tile5.nc
+        - input-data-20220414/FV3_fix_tiled/C96/C96.vegetation_greenness.tile6.nc
+        - input-data-20220414/FV3_fix_tiled/C96/C96.vegetation_type.tile1.nc
+        - input-data-20220414/FV3_fix_tiled/C96/C96.vegetation_type.tile2.nc
+        - input-data-20220414/FV3_fix_tiled/C96/C96.vegetation_type.tile3.nc
+        - input-data-20220414/FV3_fix_tiled/C96/C96.vegetation_type.tile4.nc
+        - input-data-20220414/FV3_fix_tiled/C96/C96.vegetation_type.tile5.nc
+        - input-data-20220414/FV3_fix_tiled/C96/C96.vegetation_type.tile6.nc
+        - input-data-20220414/FV3_input_data/INPUT/C96_grid.tile1.nc
+        - input-data-20220414/FV3_input_data/INPUT/C96_grid.tile2.nc
+        - input-data-20220414/FV3_input_data/INPUT/C96_grid.tile3.nc
+        - input-data-20220414/FV3_input_data/INPUT/C96_grid.tile4.nc
+        - input-data-20220414/FV3_input_data/INPUT/C96_grid.tile5.nc
+        - input-data-20220414/FV3_input_data/INPUT/C96_grid.tile6.nc
+        - input-data-20220414/FV3_input_data/INPUT/grid_spec.nc
+        - input-data-20220414/FV3_input_data/INPUT/oro_data.tile1.nc
+        - input-data-20220414/FV3_input_data/INPUT/oro_data.tile2.nc
+        - input-data-20220414/FV3_input_data/INPUT/oro_data.tile3.nc
+        - input-data-20220414/FV3_input_data/INPUT/oro_data.tile4.nc
+        - input-data-20220414/FV3_input_data/INPUT/oro_data.tile5.nc
+        - input-data-20220414/FV3_input_data/INPUT/oro_data.tile6.nc    
     
   atm:
     name: cdeps
@@ -12,3 +65,17 @@ components:
     library_dir: /test/CDEPS/install/lib
     include_dir: /test/CDEPS/install/include
     libs: [datm, streams, dshr, cdeps_share, FoX_dom, FoX_wxml, FoX_sax, FoX_common, FoX_utils, FoX_fsys]
+    input:
+      type: ftp
+      end_point: ftp.cgd.ucar.edu
+      files:
+        - /cesm/inputdata/atm/datm7/atm_forcing.datm7.GSWP3.0.5d.v1.c170516/Precip/clmforc.GSWP3.c2011.0.5x0.5.Prec.1999-12.nc
+        - /cesm/inputdata/atm/datm7/atm_forcing.datm7.GSWP3.0.5d.v1.c170516/Precip/clmforc.GSWP3.c2011.0.5x0.5.Prec.2000-01.nc
+        - /cesm/inputdata/atm/datm7/atm_forcing.datm7.GSWP3.0.5d.v1.c170516/Solar/clmforc.GSWP3.c2011.0.5x0.5.Solr.1999-12.nc
+        - /cesm/inputdata/atm/datm7/atm_forcing.datm7.GSWP3.0.5d.v1.c170516/Solar/clmforc.GSWP3.c2011.0.5x0.5.Solr.2000-01.nc
+        - /cesm/inputdata/atm/datm7/atm_forcing.datm7.GSWP3.0.5d.v1.c170516/TPHWL/clmforc.GSWP3.c2011.0.5x0.5.TPQWL.1999-12.nc
+        - /cesm/inputdata/atm/datm7/atm_forcing.datm7.GSWP3.0.5d.v1.c170516/TPHWL/clmforc.GSWP3.c2011.0.5x0.5.TPQWL.2000-01.nc
+        - /cesm/inputdata/atm/datm7/atm_forcing.datm7.GSWP3.0.5d.v1.c170516/clmforc.GSWP3.c2011.0.5x0.5.TPQWL.SCRIP.210520_ESMFmesh.nc
+        - /cesm/inputdata/atm/datm7/topo_forcing/topodata_0.9x1.25_USGS_070110_stream_c151201.nc
+        - /cesm/inputdata/atm/datm7/topo_forcing/topodata_0.9x1.SCRIP.210520_ESMFmesh.nc
+        - /cesm/inputdata/share/meshes/fv1.9x2.5_141008_ESMFmesh.nc
