@@ -6,7 +6,7 @@ components:
     include_dir: /test/noahmp/install/mod
     libs: [noahmp]
     input:
-      type: s3
+      protocol: s3
       end_point: noaa-ufs-regtests-pds
       files:
         - input-data-20220414/FV3_fix_tiled/C96/C96.maximum_snow_albedo.tile1.nc
@@ -62,11 +62,11 @@ components:
   atm:
     name: cdeps
     module: cdeps_datm_comp
-    library_dir: /test/CDEPS/install/lib
-    include_dir: /test/CDEPS/install/include
+    library_dir: /test/cdeps/install/lib
+    include_dir: /test/cdeps/install/include
     libs: [datm, streams, dshr, cdeps_share, FoX_dom, FoX_wxml, FoX_sax, FoX_common, FoX_utils, FoX_fsys]
     input:
-      type: ftp
+      protocol: ftp
       end_point: ftp.cgd.ucar.edu
       files:
         - /cesm/inputdata/atm/datm7/atm_forcing.datm7.GSWP3.0.5d.v1.c170516/Precip/clmforc.GSWP3.c2011.0.5x0.5.Prec.1999-12.nc
