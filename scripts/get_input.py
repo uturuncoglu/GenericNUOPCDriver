@@ -139,9 +139,10 @@ def s3_get(end_point, files, fhash, force_download):
         if not found:
             print('file not found \'{}\''.format(lfile))
             download = True
-        if md5sum_remote != md5sum_local:
-            print('file \'{}\' is found but checksums are not matched!\ns3   :{}\nlocal:{}'.format(lfile, md5sum_remote, md5sum_local))
-            download = True
+        else:
+            if md5sum_remote != md5sum_local:
+                print('file \'{}\' is found but checksums are not matched!\ns3   :{}\nlocal:{}'.format(lfile, md5sum_remote, md5sum_local))
+                download = True
         if force_download:
             download = True
         if download:    
