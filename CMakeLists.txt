@@ -27,7 +27,7 @@ else()
   endif()
 endif()
 
-find_package( PythonInterp 2.7 REQUIRED )
+find_package(PythonInterp 2.7 REQUIRED)
 
 #------------------------------------------------------------------------------
 # Find configuration specific dependencies
@@ -46,10 +46,15 @@ add_executable(driver ${_driver_files})
 
 #------------------------------------------------------------------------------
 # Generate include files for CMake and driver code
+message("Using ${PYTHON_EXECUTABLE}")
 execute_process(
   COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/scripts/gen_code.py 
     --ifile=${CMAKE_CURRENT_SOURCE_DIR}/nuopc_drv.yaml 
-    --odir=${CMAKE_CURRENT_SOURCE_DIR})
+    --odir=${CMAKE_CURRENT_SOURCE_DIR}
+    RESULT_VARIABLE err)
+if(err EQUAL "1")
+  message(FATAL_ERROR "Python code generator returned bad exit status!")
+endif()
 
 #------------------------------------------------------------------------------
 # Add external libraries
