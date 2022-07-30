@@ -112,38 +112,27 @@ def gen_config(_dict):
                     else:
                         sys.exit("content is not given for '{}:{}' config section!".format(k1, k2))
 
-def mode_type(x):
-    if x.lower() == 'config' or x.lower() == 'input' or x.lower() == 'codegen':
-        return x
-    else:
-        raise argparse.ArgumentTypeError('config|input|code are the expected option for mode!')
-
 def main(argv):
     # default values
     ifile = 'nuopc_drv.yaml'
     odir = '.'
-    mode = 'config'
 
     # read input arguments
     parser = argparse.ArgumentParser()
     parser.add_argument('--ifile' , help='Input YAML file')
     parser.add_argument('--odir'  , help='Output directory')
-    parser.add_argument('--mode'  , help='Script mode [config|input|codegen]', required=True, type=mode_type, nargs='?')
     args = parser.parse_args()
 
     if args.ifile:
         ifile = args.ifile
     if args.odir:
         odir = args.odir
-    if args.mode:
-        mode = args.mode
 
     # read configuration YAML file
     _dict = read_drv_yaml_file(ifile)
 
     # generate configuration files
-    if mode.lower() == 'config':
-        gen_config(_dict)
+    gen_config(_dict)
 
 if __name__== "__main__":
     main(sys.argv[1:])
