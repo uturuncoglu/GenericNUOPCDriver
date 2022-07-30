@@ -1,5 +1,14 @@
 components:
   drv:
+    runseq:
+      dt:
+        values: 3600
+      lnd-to-atm:
+        values: remapMethod=bilinear:unmappedaction=ignore:zeroregion=select
+      atm-to-lnd: 
+        values: remapMethod=bilinear:unmappedaction=ignore:zeroregion=select
+      atm:
+      lnd:
     config:
       nuopc:
         name: nuopc.configure 
@@ -26,6 +35,9 @@ components:
               values: 0
             start_ymd:
               values: 20000101
+          no_group:
+            component_list:
+              values: ATM LND
 
   lnd: nuopc_lnd.yaml
 
