@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 try:
     from yaml import CDumper as Dumper
     from yaml import CLoader as Loader
@@ -21,9 +22,7 @@ def read_drv_yaml_file(file_path):
 def create_inc_comps(_dict, odir):
     # open file
     with open(os.path.join(odir, 'comps.inc'), 'w') as f:
-        # loop through components and create use statements
-        od = collections.OrderedDict(sorted(_dict['components'].items()))
-        for k1, v1 in od.items():
+        for k1, v1 in _dict.items():
             comp_name = k1
             comp_module = v1['module']
             f.write('use {}, only: {}SS => SetServices\n'.format(comp_module, comp_name))
@@ -34,8 +33,7 @@ def create_inc_macro(_dict, odir):
         i = 1
         _str = []
         # loop through components and create statement
-        od = collections.OrderedDict(sorted(_dict['components'].items()))
-        for k1, v1 in od.items():
+        for k1, v1 in _dict.items():
             comp_name = k1
             _str.append('compSS({})%s_ptr => {}SS'.format(i, comp_name))
             i = i+1
@@ -46,10 +44,9 @@ def create_inc_cmake(_dict, odir):
     # open file
     with open(os.path.join(odir, 'extlib.txt'), 'w') as f:
         # loop through components and create use statements
-        od = collections.OrderedDict(sorted(_dict['components'].items()))
-        comp_str = [comp.upper() for comp in od.keys()]
+        comp_str = [comp.upper() for comp in _dict.keys()]
         f.write('set(COMPS {})\n'.format(' '.join(comp_str)))
-        for k1, v1 in od.items():
+        for k1, v1 in _dict.items():
             # check environment variables first, {COMP}_LIB_DIR and {COMP}_INC_DIR
             lib_dir = os.environ.get('{}_LIB_DIR'.format(k1.upper()), v1['library_dir'])
             inc_dir = os.environ.get('{}_INC_DIR'.format(k1.upper()), v1['include_dir'])
@@ -73,17 +70,34 @@ def main(argv):
     if args.odir:
         odir = args.odir
 
-    # read driver configuration yaml file
-    dict_drv = read_drv_yaml_file(ifile)
+    # read driver configuration yaml file and sort it
+    _dict = read_drv_yaml_file(ifile)
+
+    # sort based on components
+    _dict = collections.OrderedDict(sorted(_dict['components'].items()))
+
+    # remove driver from dictionary
+    _dict.pop('drv', None)
+
+    # loop over component YAML files and add it to dictionary
+    for k1, v1 in _dict.items():
+        # read component YAML file
+        if os.path.isabs(os.path.dirname(v1)): # absolute path is used
+            _dict_comp = read_drv_yaml_file(v1)
+        else: # relative path is used
+            _dict_comp = read_drv_yaml_file(os.path.join(os.path.dirname(ifile), v1))
+    
+        # add component info
+        _dict[k1] = _dict_comp
 
     # create comps.inc
-    create_inc_comps(dict_drv, odir)
+    create_inc_comps(_dict, odir)
 
     # create macros.inc
-    create_inc_macro(dict_drv, odir)
+    create_inc_macro(_dict, odir)
 
     # create extlib.txt for CMake
-    create_inc_cmake(dict_drv, odir)
+    create_inc_cmake(_dict, odir)
 
 if __name__== "__main__":
 	main(sys.argv[1:])

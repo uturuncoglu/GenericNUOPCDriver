@@ -25,8 +25,7 @@ def read_drv_yaml_file(file_path):
 
 def recv_files(_dict, fhash, force_download):
     # loop through available components
-    od = collections.OrderedDict(sorted(_dict['components'].items()))
-    for k1, v1 in od.items():
+    for k1, v1 in _dict.items():
         # query protocol, end_point and also list of files
         protocol = v1['input']['protocol']
         end_point = v1['input']['end_point']
@@ -170,14 +169,31 @@ def main(argv):
     if args.force_download:
         force_download = args.force_download
 
-    # read driver configuration yaml file
-    dict_drv = read_drv_yaml_file(ifile)
+    # read driver configuration yaml file and sort it
+    _dict = read_drv_yaml_file(ifile)
+
+    # sort based on components
+    _dict = collections.OrderedDict(sorted(_dict['components'].items()))
+
+    # remove driver from dictionary
+    _dict.pop('drv', None)
+
+    # loop over component YAML files and add it to dictionary
+    for k1, v1 in _dict.items():
+        # read component YAML file
+        if os.path.isabs(os.path.dirname(v1)): # absolute path is used
+            _dict_comp = read_drv_yaml_file(v1)
+        else: # relative path is used
+            _dict_comp = read_drv_yaml_file(os.path.join(os.path.dirname(ifile), v1))
+
+        # add component info
+        _dict[k1] = _dict_comp
 
     # open file object to store list of files and their hashes
     fhash = open('file_checksum.lock', 'w')
 
     # get files
-    recv_files(dict_drv, fhash, force_download)
+    recv_files(_dict, fhash, force_download)
 
     # close file
     fhash.close()
