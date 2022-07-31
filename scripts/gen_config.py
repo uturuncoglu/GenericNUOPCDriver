@@ -104,7 +104,11 @@ def gen_config(_dict, ifile):
 
                     # write config file in specified format
                     if 'nuopc' in k2:
-                        pg.write_nuopc(ofile, append=append[k3])
+                        sep = ':'
+                        if 'seperator' in v2:
+                            if v2['seperator'].lower() == 'eq':
+                                sep = ' ='
+                        pg.write_nuopc(ofile, append=append[k3], seperator=sep)
                     elif 'nml' in k2:
                         pg.write_nml(ofile, append=append[k3])
                     else:

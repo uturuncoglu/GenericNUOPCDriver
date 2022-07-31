@@ -21,6 +21,7 @@ input:
 config:
   nuopc1:
     name: nuopc.configure
+    seperator: eq 
     content: 
       no_group:
         ATM_petlist:
@@ -109,7 +110,7 @@ config:
     content:
       datm_nml:
         datamode: 
-          values: ${DATAMODE} 
+          values: '"${DATAMODE}"'
         factorfn_data:
           values: '"null"'
         factorfn_mesh:
@@ -123,9 +124,9 @@ config:
         iradsw:
           values: 1
         model_maskfile:
-          values: ${MODEL_MASKFILE}
+          values: '"${MODEL_MASKFILE}"'
         model_meshfile:
-          values: ${MODEL_MESHFILE}
+          values: '"${MODEL_MESHFILE}"'
         nx_global:
           values: ${NX_GLOBAL}
         ny_global:

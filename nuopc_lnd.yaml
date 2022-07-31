@@ -60,6 +60,7 @@ input:
 config:
   nuopc:
     name: nuopc.configure
+    seperator: eq
     content: 
       no_group:
         LND_petlist: 

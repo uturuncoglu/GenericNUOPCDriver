@@ -12,6 +12,7 @@ components:
     config:
       nuopc:
         name: nuopc.configure 
+        seperator: eq 
         content:
           ALLCOMP_attributes:
             case_name:
