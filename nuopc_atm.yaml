@@ -21,7 +21,6 @@ input:
 config:
   nuopc1:
     name: nuopc.configure
-    seperator: eq 
     content: 
       no_group:
         ATM_petlist:
