@@ -128,7 +128,7 @@ def gen_config(_dict, ifile):
             if 'dt' != k1:
                 _str = k1.upper().replace('-TO-', ' -> ').strip()
                 if _str != k1.upper():
-                    _str = ': '.join([_str, v1['values']])
+                    _str = ' :'.join([_str, v1['values']])
                     runseq.add_action(_str, True)
                 else:
                     runseq.add_action(_str, True)
