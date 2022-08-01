@@ -27,7 +27,7 @@ else()
   endif()
 endif()
 
-find_package(PythonInterp 2.7 REQUIRED)
+find_package(Python3 COMPONENTS Interpreter Development)
 
 #------------------------------------------------------------------------------
 # Find configuration specific dependencies
